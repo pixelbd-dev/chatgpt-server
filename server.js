@@ -1,53 +1,49 @@
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
+import dotenv from "dotenv";
 import OpenAI from "openai";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// health check
+app.get("/", (req, res) => {
+  res.send("Server alive ✅");
 });
 
 app.post("/chat", async (req, res) => {
   try {
-    const userMessage = req.body.message;
-
-    if (!userMessage) {
-      return res.json({ reply: "Say something 😶" });
-    }
+    const message = req.body.message;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        {
-          role: "system",
-          content: "You are a friendly Roblox NPC. Reply short and friendly."
-        },
-        {
-          role: "user",
-          content: userMessage
-        }
-      ],
+        { role: "system", content: "You are a friendly Roblox NPC." },
+        { role: "user", content: message }
+      ]
     });
 
-    const reply = completion.choices[0].message.content;
-
-    res.json({ reply });
+    res.json({
+      reply: completion.choices[0].message.content
+    });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      reply: "AI brain error 😵"
-    });
+    res.status(500).json({ reply: "NPC offline 😢" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server running on " + PORT);
+  console.log("Server running on", PORT);
 });
+
 
 
