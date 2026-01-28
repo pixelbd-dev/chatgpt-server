@@ -1,20 +1,19 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import fetch from "node-fetch";
 
 dotenv.config();
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-// ✅ HEALTH CHECK (VERY IMPORTANT FOR RENDER)
+// health check
 app.get("/", (req, res) => {
-  res.status(200).send("Remember to breathe 🌿");
+  res.send("Server alive 🚀");
 });
 
-// ✅ CHAT ENDPOINT
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -29,7 +28,7 @@ app.post("/chat", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4.1-mini",
+        model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "You are a friendly NPC inside a Roblox game." },
           { role: "user", content: userMessage }
@@ -40,19 +39,22 @@ app.post("/chat", async (req, res) => {
 
     const data = await response.json();
 
+    // DEBUG LOG (VERY IMPORTANT)
+    console.log("OPENAI RESPONSE:", JSON.stringify(data, null, 2));
+
     res.json({
-      reply: data?.choices?.[0]?.message?.content || "I am thinking 🤔"
+      reply: data.choices?.[0]?.message?.content || "NPC is silent 😶"
     });
 
   } catch (err) {
-    console.error(err);
-    res.json({ reply: "Sorry, I can't talk right now 😢" });
+    console.error("SERVER ERROR:", err);
+    res.json({ reply: "Server error 😢" });
   }
 });
 
-// ✅ MUST USE process.env.PORT
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log("Server running on", PORT);
 });
+
 
