@@ -1,6 +1,25 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import fetch from "node-fetch";
+
+dotenv.config();
+
+const app = express(); // ✅ THIS WAS MISSING / BROKEN
+
+app.use(cors());
+app.use(express.json());
+
+// ✅ HEALTH CHECK
+app.get("/", (req, res) => {
+  res.status(200).send("Remember to breathe 🌿");
+});
+
+// ✅ CHAT ENDPOINT
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message;
+
     if (!userMessage) {
       return res.json({ reply: "Say something first 🙂" });
     }
@@ -23,10 +42,10 @@ app.post("/chat", async (req, res) => {
 
     const data = await response.json();
 
-    console.log("OPENAI RESPONSE:", JSON.stringify(data, null, 2));
+    console.log("OPENAI RESPONSE:", data);
 
     if (!data.choices) {
-      return res.json({ reply: "⚠️ AI error, check server logs" });
+      return res.json({ reply: "⚠️ AI error, check logs" });
     }
 
     res.json({
@@ -39,5 +58,10 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+// ✅ PORT (Render requires this)
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+}
 
 
