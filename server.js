@@ -5,7 +5,7 @@ import fetch from "node-fetch";
 
 dotenv.config();
 
-const app = express(); // ✅ THIS WAS MISSING / BROKEN
+const app = express();
 
 app.use(cors());
 app.use(express.json());
@@ -42,26 +42,21 @@ app.post("/chat", async (req, res) => {
 
     const data = await response.json();
 
-    console.log("OPENAI RESPONSE:", data);
-
-    if (!data.choices) {
-      return res.json({ reply: "⚠️ AI error, check logs" });
-    }
-
     res.json({
-      reply: data.choices[0].message.content
+      reply: data?.choices?.[0]?.message?.content || "I am thinking 🤔"
     });
 
   } catch (err) {
-    console.error("SERVER ERROR:", err);
-    res.json({ reply: "Server crashed 😢" });
+    console.error(err);
+    res.json({ reply: "Sorry, I can't talk right now 😢" });
   }
 });
 
-// ✅ PORT (Render requires this)
+// ✅ IMPORTANT: Render PORT
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-}
+});
+
 
 
