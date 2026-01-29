@@ -9,9 +9,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Force v1 API
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
-  apiVersion: "v1",
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ GEMINI_API_KEY missing");
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// ✅ USE THIS MODEL (WORKING)
+const model = genAI.getGenerativeModel({
+  model: "models/gemini-1.5-flash-001",
 });
 
 app.post("/chat", async (req, res) => {
@@ -19,13 +25,8 @@ app.post("/chat", async (req, res) => {
     const { message } = req.body;
 
     if (!message) {
-      return res.status(400).json({ reply: "No message received 😴" });
+      return res.status(400).json({ reply: "Empty message 😴" });
     }
-
-    // ✅ CURRENTLY SUPPORTED MODEL
-    const model = genAI.getGenerativeModel({
-      model: "models/gemini-1.5-pro",
-    });
 
     const result = await model.generateContent({
       contents: [
@@ -37,12 +38,12 @@ app.post("/chat", async (req, res) => {
     });
 
     const reply =
-      result.response.candidates?.[0]?.content?.parts?.[0]?.text ||
+      result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "No reply 🤖";
 
     res.json({ reply });
   } catch (err) {
-    console.error("Gemini error:", err);
+    console.error("🔥 Gemini error:", err);
     res.status(500).json({
       reply: "NPC offline 😵",
       error: err.message,
@@ -56,8 +57,6 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
-  console.log("Server running on port", PORT)
+  console.log("✅ Server running on port", PORT)
 );
-
-
 
