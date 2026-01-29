@@ -1,49 +1,57 @@
 import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import OpenAI from "openai";
-
-dotenv.config();
+import fetch from "node-fetch";
+import bodyParser from "body-parser";
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+// health check
+app.get("/", (req, res) => {
+  res.send("Server is running ✅");
 });
 
 app.post("/chat", async (req, res) => {
   try {
-    const { message } = req.body;
+    const userMessage = req.body.message;
 
-    if (!message) {
-      return res.status(400).json({ reply: "No message sent" });
+    if (!userMessage) {
+      return res.json({ reply: "Say something 🙂" });
     }
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a helpful NPC in a game." },
-        { role: "user", content: message }
-      ],
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: userMessage }],
+            },
+          ],
+        }),
+      }
+    );
 
-    res.json({
-      reply: response.choices[0].message.content,
-    });
+    const data = await response.json();
 
+    if (!data.candidates) {
+      return res.json({ reply: "NPC is resting 😴" });
+    }
+
+    const reply =
+      data.candidates[0]?.content?.parts[0]?.text ||
+      "🤔 ...";
+
+    res.json({ reply });
   } catch (err) {
-    console.error("OPENAI ERROR:", err);
-    res.status(500).json({
-      reply: "NPC offline 😢",
-      error: err.message,
-    });
+    console.error(err);
+    res.status(500).json({ reply: "NPC offline 😴" });
   }
-});
-
-app.get("/", (req, res) => {
-  res.send("Server is running ✅");
 });
 
 const PORT = process.env.PORT || 3000;
