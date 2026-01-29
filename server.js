@@ -1,8 +1,13 @@
 import express from "express";
 import fetch from "node-fetch";
 import bodyParser from "body-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config(); // ✅ REQUIRED
 
 const app = express();
+app.use(cors()); // ✅ Roblox-safe
 app.use(bodyParser.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -14,9 +19,9 @@ app.get("/", (req, res) => {
 
 app.post("/chat", async (req, res) => {
   try {
-    const userMessage = req.body.message;
+    const userMessage = req.body?.message;
 
-    if (!userMessage) {
+    if (!userMessage || typeof userMessage !== "string") {
       return res.json({ reply: "Say something 🙂" });
     }
 
@@ -30,6 +35,7 @@ app.post("/chat", async (req, res) => {
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [{ text: userMessage }],
             },
           ],
@@ -39,17 +45,18 @@ app.post("/chat", async (req, res) => {
 
     const data = await response.json();
 
-    if (!data.candidates) {
+    if (!response.ok) {
+      console.error("Gemini error:", data);
       return res.json({ reply: "NPC is resting 😴" });
     }
 
     const reply =
-      data.candidates[0]?.content?.parts[0]?.text ||
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ??
       "🤔 ...";
 
     res.json({ reply });
   } catch (err) {
-    console.error(err);
+    console.error("Server error:", err);
     res.status(500).json({ reply: "NPC offline 😴" });
   }
 });
@@ -58,6 +65,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
+
 
 
 
