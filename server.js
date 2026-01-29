@@ -9,10 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-if (!process.env.GEMINI_API_KEY) {
-  console.error("❌ GEMINI_API_KEY missing");
-}
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post("/chat", async (req, res) => {
@@ -23,23 +19,12 @@ app.post("/chat", async (req, res) => {
       return res.status(400).json({ reply: "Message pathao 😴" });
     }
 
-    // ✅ WORKING + STABLE MODEL
-    const model = genAI.getGenerativeModel({
-      model: "models/gemini-1.5-pro",
-    });
+    // UPDATED MODEL NAME
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ],
-    });
-
-    const reply =
-      result.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response 😶";
+    const result = await model.generateContent(message);
+    const response = await result.response;
+    const reply = response.text();
 
     res.json({ reply });
   } catch (error) {
@@ -51,12 +36,7 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("✅ Gemini Chat Server Running");
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
-
