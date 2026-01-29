@@ -19,7 +19,7 @@ app.post("/chat", async (req, res) => {
       return res.status(400).json({ reply: "Message pathao 😴" });
     }
 
-    // UPDATED MODEL NAME
+    // ✅ Model name updated to gemini-1.5-flash for stability
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const result = await model.generateContent(message);
